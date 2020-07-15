@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Aggregate/Summarize = optimise a list of route prefixes</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+  <meta name="keywords" content="aggregate routes, aggregate online, bgp aggregate online, ospf summary, eigrp, routing, protocols, cisco, routes, network, perfixes, summarize online, aggregate online, routing, ip address, ip range, aggregate command online" />
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+
+  <style>
+    .txtArea {
+      font-size: small;
+      font-weight: bold;
+      color: #00FF00;
+      background-color: black
+    }
+  </style>
+   <style>
+    .txtArea_OUTPUT {
+      font-size: small;
+      font-weight: bold;
+      color: black;
+      background-color: #DDDDDD
+    }
+  </style>
+  <style>
+  .jumbotron {
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  height: 20vh;
+  width: 100vw;
+  color: white; 	
+  background-color: black
+	}
+  </style>	
+</head>
+<body>
+
+<div class="jumbotron text-center">
+  <h3>Aggregate/Summarize = optimise a list of route prefixes</h3>
+</div>
+
+<div class="d-flex flex-row-reverse bd-highlight">
+  <div class="p-2 pr-3 bd-highlight"><button type="button" class="btn btn-info" data-toggle="modal" data-target="#helpModal">Help</button></div>
+  <div class="p-2  bd-highlight"><button type="button" class="btn btn-info" data-toggle="modal" data-target="#aboutModal">About</button></div>
+</div>
+
+<!-- The Help Modal -->
+<div class="modal" id="helpModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">Help</h4>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body">
+	  <b>For example in the INPUT if we have</b>
+<br>10.0.0.0/19</br>
+10.0.255.0/24
+<br>10.1.0.0/24</br>
+10.1.1.0/24
+<br>10.1.2.0/24</br>
+10.1.2.0/25
+<br>10.1.2.128/25</br>
+10.1.3.0/25
+
+<p><b>The OUTPUT should be</b></br>
+
+10.0.0.0/19
+<br>10.0.255.0/24</br>
+10.1.0.0/23
+<br>10.1.2.0/24</br>
+10.1.3.0/25
+      </div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- The About Modal -->
+<div class="modal" id="aboutModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <h4 class="modal-title">About</h4>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body">
+        <p>
+        <br><b>Takes a list of prefixes and :</b></br>
+>> Remove any supplied prefixes which are superfluous because they are already included in another supplied prefix. 
+For example, 10.0.2.0/24 would be removed if 10.0.0.0/17 was also supplied.
+<br>>> Identifies adjacent prefixes that can be combined under a single, shorter-length prefix. 
+For example, 10.0.2.0/24 and 10.0.3.0/24 can be combined into the single prefix 10.0.2.0/23</br>
+        </p>
+		<p>Visit us on : <a href="https://github.com/ShellVision/JS_aggregate_routes">https://github.com/ShellVision/JS_aggregate</a></p>
+
+      </div>
+
+      <!-- Modal footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="container">
+<!--  <div class="row d-flex justify-content-center">-->
+<!--    <button type="button" class="btn btn-success pl-5 pr-5 py-2" onclick="run()">Run</button>-->
+<!--  </div>-->
+  <div class="row">
+    <div class="col-sm-6 p-5">
+      <h5 class="text-center">INPUT :</h5>
+      <textarea class="w-100 mt-3 txtArea" id="input" rows="15" onkeyup="run()" placeholder="Past the prefixes that should be summarized here..."></textarea>
+    </div>
+    <div class="col-sm-6 p-5">
+      <h5 class="text-center">OUTPUT :</h5>
+      <textarea class="w-100 mt-3 txtArea_OUTPUT" id="output" rows="15"  disabled></textarea>
+   <button type="button" data-dismiss="modal" class="btn btn-primary" onclick=saveTextAsFile(output.value,'Output_Summary_Routes_.txt')>Download</button>
+
+    </div>
+  </div>
+  <div class="row d-flex justify-content-center">
+    <p class="text-danger" style="display: none">Syntax Error</p>
+  </div>
+  <script>
+
+    function isdigit( c ) {
+      if(c >= '0' && c <= '9')
+      {
+        return true;
+      }
+      return false;
+    }
+
+    function htonl( val) {
+      return (
+        (val & 0xFF000000) >>> 24|
+        (val & 0x00FF0000) >>> 8|
+        (val & 0x0000FF00) <<  8|
+        (val & 0x000000FF) <<  24
+      );
+    }
+
+
+    function ntohl( val) {
+      return (
+              (val & 0xFF000000) >>> 24|
+              (val & 0x00FF0000) >>> 8|
+              (val & 0x0000FF00) <<  8|
+              (val & 0x000000FF) <<  24
+      );
+    }
+
+
+    function inet_ntoa( val)
+    {
+      var retStr = "";
+      retStr = (val & 0x000000FF).toString(10) + "." +
+              ((val & 0x0000FF00) >>> 8) .toString(10) + "." +
+              ((val & 0x00FF0000) >>> 16).toString(10) + "." +
+              ((val & 0xFF000000) >>> 24).toString(10);
+      return retStr;
+
+    }
+    function my_inet_aton(in_item) {
+      var val = 0, in_addr = 0;
+      var parts = [];
+
+      var code = 0;
+      var prefix = 0;
+      var item = in_item.trim();
+      var i;
+      for (i = 0; i < item.length; ) {
+        if (!isdigit(item[i]))
+        {
+          return {code: 0, prefix: 0}
+        }
+
+        val = 0;
+
+        while (true)
+        {
+          if(isdigit(item[i]))
+          {
+            val = val * 10 + parseInt(item[i]);
+            i++;
+          }
+          else
+          {
+            break;
+          }
+        }
+        if(item[i] == '.')
+        {
+            if(parts.length > 4)
+            {
+              return {code: 0, prefix: 0}
+            }
+            parts.push(val);
+            i++
+        }
+        else
+        {
+          break;
+        }
+      }
+
+      // if (item[i] != '\0')
+      // {
+      //   return {code: 0, prefix: 0}
+      // }
+      var n = parts.length + 1;
+      switch (n)
+      {
+        case 0:       /* initial nondigit */
+          return {code: 0, prefix: 0}
+
+        case 1:       /* a -- 32 bits */
+          break;
+
+        case 2:       /* a.b -- 8.24 bits */
+          if ((val > 0xffffff) || (parts[0] > 0xff))
+            return (0);
+          val |= parts[0] << 24;
+          break;
+
+        case 3:       /* a.b.c -- 8.8.16 bits */
+          if ((val > 0xffff) || (parts[0] > 0xff) || (parts[1] > 0xff))
+            return (0);
+          val |= (parts[0] << 24) | (parts[1] << 16);
+          break;
+
+        case 4:       /* a.b.c.d -- 8.8.8.8 bits */
+          if ((val > 0xff) || (parts[0] > 0xff) || (parts[1] > 0xff) || (parts[2] > 0xff))
+            return (0);
+          val |= (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8);
+          break;
+      }
+      console.log(val.toString(16));
+      prefix = htonl(val);
+      code = 1;
+      return {code: code, prefix: prefix};
+    }
+
+    function run() {
+      var inputStr = $.trim($("#input").val());
+      document.getElementById("output").value = "";
+
+      if(inputStr == '')
+      {
+        //alert('Please type input!');
+      }
+      else
+      {
+        var MAX_buf = 63;
+        var verbose = 0, quiet = 0, truncate = 0;
+        var default_prefix_length = 0;
+        var max_prefix_length = 32;
+        var max_prefix_opt = 32;
+        var ch, i, masklen, found;
+        var prefix;
+
+        var error_flag = false;
+        var filter_list = null, head = null;
+
+        if (default_prefix_length > max_prefix_length && !quiet)
+        {
+          console.log("default prefix length " + default_prefix_length + "is greater than maximum prefix length " + max_prefix_length);
+          return;
+        }
+        if (!quiet)
+        {
+          console.log("maximum prefix length permitted will be "+ max_prefix_length);
+        }
+
+        if (max_prefix_opt > max_prefix_length && !quiet)
+        {
+          console.log("no optimisation for prefixes longer than " + max_prefix_length + " bits");
+        }
+
+        if (default_prefix_length && !quiet)
+        {
+          console.log("prefix length of " + default_prefix_length + " bits will be used where none specified");
+        }
+
+        var inputArray = inputStr.split("\n");
+
+        inputArray.forEach(function(item, index) {
+          if (default_prefix_length)
+          {
+            var i = 0;
+            while (item[i] == '.' || (item[i] >= '0' && item[i] <= '9') && i < MAX_buf)
+            {
+              i++;
+            }
+            if (i == MAX_buf)
+            {
+              if (!quiet){
+                console.log("[line" + index +  "] line too long; ignoring line" )
+                error_flag = true;
+                document.getElementById("output").style.color = "red";
+                document.getElementById("output").value = document.getElementById("output").value  + "[line" + index +  "] line too long; ignoring line\n";
+              }
+              return;
+            }
+            item[i] = '0';       //????????????????????????????????
+            masklen = default_prefix_length;
+          }
+          else
+          {
+            var i = 0;
+            while (item[i] != '/' && i < MAX_buf) i++;
+
+            if (i == MAX_buf)
+            {
+              if (!quiet)
+              {
+                console.log("[line" + index +  "] line too long; ignoring line" );
+                error_flag = true;
+                document.getElementById("output").style.color = "red";
+                document.getElementById("output").value = document.getElementById("output").value  + "[line" + index +  "] line too long; ignoring line\n";
+              }
+              return;
+            }
+            var masklenStr = item.slice(i+1);
+            masklen = parseInt(masklenStr);
+            if (masklen < 1 || masklen > max_prefix_length)
+            {
+              if (!quiet)
+              {
+                console.log( "[line " + index + "] mask length " + masklen + " out of range; ignoring line");
+                error_flag = true;
+                document.getElementById("output").style.color = "red";
+                document.getElementById("output").value = document.getElementById("output").value  + "[line " + index + "] mask length " + masklen + " out of range; ignoring line\n";
+              }
+              return;
+            }
+          }
+
+          var ret = my_inet_aton(item.substring(0, i));
+          prefix = ret.prefix;
+          console.log(prefix.toString(16));
+
+          if (ret.code == 0)
+          {
+            if (!quiet)
+            {
+              console.log("[line "+ index +"] can't parse prefix '" + item + "'; ignoring line");
+              error_flag = true;
+              document.getElementById("output").style.color = "red";
+              document.getElementById("output").value = document.getElementById("output").value  + "[line "+ index +"] can't parse prefix '" + item + "'; ignoring line\n";
+            }
+            return;
+          }
+          if ((ntohl(prefix) & (0xffffffff >>> masklen)) != 0 && masklen < 32)
+          {
+
+            if (truncate)
+            {
+              prefix = htonl(ntohl(prefix) & (0xffffffff << (32-masklen)));
+              if (!quiet)
+              {
+                console.log("[line " + index + "] prefix "+ item[i] +"/" + masklen + " truncated to " + prefix + "/" + masklen);
+              }
+            }
+            else
+            {
+              if (!quiet)
+              {
+                console.log("[line "+ index +"] " + inet_ntoa(prefix) + "/" + masklen + " inconsistent; ignoring line");
+                error_flag = true;
+                document.getElementById("output").style.color = "red";
+                document.getElementById("output").value = document.getElementById("output").value  + "[line "+ index +"] " + inet_ntoa(prefix) + "/" + masklen + " inconsistent; ignoring line\n";
+              }
+              return;
+            }
+          }
+
+          /* create a list entry, and insertion sort it */
+          var p = {
+            prefix:prefix,
+            masklen:masklen,
+            origin: "origin_SUPPLIED",
+            line:index,
+            next: null
+          }
+
+          var r =null;
+          var q = null;
+          if (head)
+          {
+            q = head;
+            r = null;
+
+            while (((ntohl(q.prefix) < ntohl(p.prefix)) || (ntohl(q.prefix) == ntohl(p.prefix) && q.masklen < p.masklen) ) && q.next)
+            {
+              r = q;
+              q = q.next;
+            }
+
+            if ((ntohl(q.prefix) < ntohl(p.prefix)) || (ntohl(q.prefix) == ntohl(p.prefix) && q.masklen < p.masklen))
+            {
+              p.next = q.next;
+              q.next = p;
+            } else {
+              if (r)
+              {
+                p.next = r.next;
+                r.next = p;
+              } else {
+                p.next = q;
+                head = p;
+              }
+            }
+
+          } else {
+            head = p;
+            head.next = null;
+          }
+        });
+
+        console.log(head);
+        if(head == null)
+        {
+          if (!quiet)
+          {
+            console.log("no prefixes supplied");
+           // document.getElementById("output").value = "no prefixes supplied\n"
+          }
+          return;
+        }
+        /* list of prefixes is now complete; do our crude optimisations */
+
+        /* first eliminate overlapping prefixes */
+
+        var p = head.next;
+        var q = null;
+        while (p)
+        {
+          q = head;
+          while (q && (q != p))
+          {
+            if ((p.masklen <= max_prefix_opt) &&
+                    ((ntohl(p.prefix) >>>(32 - q.masklen)) == (ntohl(q.prefix) >>>(32 - q.masklen))))
+            {
+              p.origin = "origin_REMOVED";
+              break;
+            }
+            q = q.next;
+          }
+          p = p.next;
+        }
+
+
+
+        /* now hunt for adjacent entries that can be combined */
+        var r = null;
+        do
+        {
+          found = 0;
+          p = head;
+          r = null;
+          while (p)
+          {
+            while (p.next && p.origin == "origin_REMOVED")
+            p = p.next;
+            if (!(p.next))
+              break;
+
+            q = p.next;
+            while (q.next && q.origin == "origin_REMOVED")
+            q = q.next;
+            if (q.origin == "origin_REMOVED")
+              break;
+
+            if ( (p.masklen == q.masklen) &&
+           (p.masklen <= max_prefix_opt) &&
+           (ntohl(p.prefix) % (2 << (32 - p.masklen)) == 0) &&
+           (ntohl(q.prefix) - ntohl(p.prefix) == (1 << (32 - p.masklen))))
+            {
+
+              var s = {
+                prefix: p.prefix,
+                masklen: p.masklen - 1,
+                origin: "origin_ADDED",
+                line:0,
+                next: p,
+              }
+
+
+              p.origin = "origin_REMOVED";
+              q.origin = "origin_REMOVED";
+
+              if (r)
+                r.next = s;
+              else
+                head = s;
+
+              found = 1;
+              break;
+            }
+            r = p;
+            p = p.next;
+          }
+        } while (found);
+
+
+        /* output the results */
+        var outstr = '';
+
+        p = head;
+        while (p)
+        {
+          if (p.origin != "origin_REMOVED")
+          {
+            outstr += inet_ntoa(p.prefix) + "/" + p.masklen + '\n';
+          }
+          p = p.next;
+        }
+        if(error_flag)
+        {
+          document.getElementById("output").style.color = "red";
+        }
+
+          document.getElementById("output").style.color = "black";
+          document.getElementById("output").value = document.getElementById("output").value + outstr;
+
+      }
+    }
+    $(document).ready(function(){
+
+    });
+	
+	
+	   function saveTextAsFile(textToWrite, fileNameToSaveAs)
+    {
+    	var textFileAsBlob = new Blob([textToWrite], {type:'text/plain'}); 
+    	var downloadLink = document.createElement("a");
+    	downloadLink.download = fileNameToSaveAs;
+    	downloadLink.innerHTML = "Download File";
+    	if (window.webkitURL != null)
+    	{
+    		// Chrome allows the link to be clicked
+    		// without actually adding it to the DOM.
+    		downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
+    	}
+    	else
+    	{
+    		// Firefox requires the link to be added to the DOM
+    		// before it can be clicked.
+    		downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+    		downloadLink.onclick = destroyClickedElement;
+    		downloadLink.style.display = "none";
+    		document.body.appendChild(downloadLink);
+    	}
+    
+    	downloadLink.click();
+    }
+  </script>
+
+</div>
+</body>
+</html>
