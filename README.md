@@ -3,8 +3,8 @@ JavaScript Code that takes a list of prefixes and :
 *  Remove any supplied prefixes which are superfluous because they are already included in another supplied prefix. For example, 10.0.2.0/24 would be removed if 10.0.0.0/17 was also supplied.
 *  Identifies adjacent prefixes that can be combined under a single, shorter-length prefix. For example, 10.0.2.0/24 and 10.0.3.0/24 can be combined into the single prefix 10.0.2.0/23
 
-
-
+Live Demo at : <a href="http://aggregate.shellvision.com/" target="_blank">**aggregate.shellvision.com**</a> to summarize the prefixes online with any browser.
+ 
 For example in the INPUT if we have
 * 10.0.0.0/19
 * 10.0.255.0/24
